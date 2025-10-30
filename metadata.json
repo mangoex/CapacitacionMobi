@@ -1,0 +1,5 @@
+{
+  "name": "Training Registration System",
+  "description": "A web application to register and manage training sessions, including details about the training, the trainer, objectives, and participants.",
+  "requestFramePermissions": []
+}
