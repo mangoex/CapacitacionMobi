@@ -19,7 +19,7 @@ const TrainingList: React.FC<TrainingListProps> = ({ trainings, onSelectTraining
       "location", "scheduledDate", "participants"
     ];
     const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + 
-    '\n"Curso de Ejemplo","Entrenador Ejemplo","Objetivo de ejemplo",8,5000,"Produccion","Sala de Juntas","2025-01-15","101:Juan Perez|102:Maria Lopez"';
+    '\n"Curso de Ejemplo","Entrenador Ejemplo","Objetivo de ejemplo",8,5000,"Produccion","Sala de Juntas","15/01/2025","101:Juan Perez|102:Maria Lopez"';
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -58,13 +58,30 @@ const TrainingList: React.FC<TrainingListProps> = ({ trainings, onSelectTraining
           headers.forEach((header, index) => {
             trainingObject[header] = data[index];
           });
+          
+          const dateStr = trainingObject.scheduledDate;
+          let finalDate = '';
+          if (dateStr) {
+              if (dateStr.includes('/')) {
+                  const parts = dateStr.split('/');
+                  if (parts.length === 3) {
+                      const [day, month, year] = parts;
+                      if (day && month && year && year.length === 4) {
+                           finalDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                      }
+                  }
+              } else if (dateStr.includes('-')) {
+                  // Assume YYYY-MM-DD is already valid
+                  finalDate = dateStr;
+              }
+          }
 
           const participants: Participant[] = (trainingObject.participants || '')
             .split('|')
             .map((pStr: string) => {
               const [id, ...nameParts] = pStr.split(':');
               const name = nameParts.join(':');
-              return (id && name) ? { id: id.trim(), name: name.trim() } : null;
+              return (name) ? { id: id.trim(), name: name.trim() } : null;
             })
             .filter((p: Participant | null): p is Participant => p !== null);
 
@@ -77,7 +94,7 @@ const TrainingList: React.FC<TrainingListProps> = ({ trainings, onSelectTraining
             investment: Number(trainingObject.investment),
             requestingArea: trainingObject.requestingArea,
             location: trainingObject.location,
-            scheduledDate: trainingObject.scheduledDate,
+            scheduledDate: finalDate,
             participants,
             dateAdded: new Date().toLocaleDateString('es-ES'),
           };
@@ -85,7 +102,7 @@ const TrainingList: React.FC<TrainingListProps> = ({ trainings, onSelectTraining
         
         const validTrainings = newTrainings.filter(t => t.trainingName && t.trainerName && t.scheduledDate && t.duration > 0 && t.investment >= 0);
         if(validTrainings.length === 0){
-           throw new Error("No se encontraron capacitaciones válidas en el archivo.");
+           throw new Error("No se encontraron capacitaciones válidas en el archivo. Verifique los datos y el formato de fecha (DD/MM/AAAA).");
         }
 
         onBatchAdd(validTrainings);
